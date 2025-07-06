@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            background: #4c63d2;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        nav a:hover {
+            background: #3c4fd5;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 99, 210, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .welcome-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .welcome-message {
+            font-size: 2em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .register-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #4c63d2 0%, #5a67d8 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .register-button:hover {
+            background: linear-gradient(135deg, #3c4fd5 0%, #4a56d8 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(76, 99, 210, 0.4);
+        }
+
+        .section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            color: #4c63d2;
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .vehicle-card, .ticket-card {
+            background: #f8fafb;
+            border: 2px solid #e1e8ed;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vehicle-card:hover, .ticket-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            border-color: #4c63d2;
+        }
+
+        .vehicle-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #4c63d2 0%, #5a67d8 100%);
+        }
+
+        .ticket-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+
+        .vehicle-header, .ticket-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .vehicle-name, .ticket-title {
+            color: #2c3e50;
+            font-size: 1.5em;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .vehicle-type-badge {
+            background: linear-gradient(135deg, #4c63d2 0%, #5a67d8 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #00b894;
+        }
+
+        .vehicle-details, .ticket-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .vehicle-details li, .ticket-details li {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #4c63d2;
+            font-size: 0.95em;
+        }
+
+        .ticket-details li {
+            border-left: 3px solid #ff6b6b;
+        }
+
+        .vehicle-details strong, .ticket-details strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .vehicle-actions, .ticket-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.9em;
+        }
+
+        .btn-complete {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-complete:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-edit:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .no-items {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .no-items p {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .no-items a {
+            color: #4c63d2;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 20px;
+            border: 2px solid #4c63d2;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .no-items a:hover {
+            background: #4c63d2;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .item-count {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .welcome-section, .section {
+                padding: 20px;
+            }
+            
+            .welcome-message {
+                font-size: 1.5em;
+            }
+            
+            .section-title {
+                font-size: 1.5em;
+            }
+            
+            .vehicle-header, .ticket-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .vehicle-details, .ticket-details {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .vehicle-actions, .ticket-actions {
+                justify-content: center;
+            }
+        }
+
+        /* Animation */
+        .container {
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .vehicle-card, .ticket-card {
+            animation: slideIn 0.6s ease-out forwards;
+            opacity: 0;
+        }
+
+        .vehicle-card:nth-child(1), .ticket-card:nth-child(1) { animation-delay: 0.1s; }
+        .vehicle-card:nth-child(2), .ticket-card:nth-child(2) { animation-delay: 0.2s; }
+        .vehicle-card:nth-child(3), .ticket-card:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="welcome-section">
+            <p class="welcome-message">👋 Welcome back, {{ username }}!</p>
+            <div class="button-group">
+                <a href="/car" class="register-button">🚗 Register A New Vehicle</a>
+                <a href="/ticket" class="register-button">🎫 Submit A New Ticket</a>
+            </div>
+        </div>
+
+        <!-- Vehicles Section -->
+        <div class="section">
+            <h2 class="section-title">🚙 Your Registered Vehicles</h2>
+            
+            {% if user_vehicles %}
+                <div class="item-count">
+                    📊 {{ user_vehicles|length }} vehicle(s) registered
+                </div>
+                
+                {% for vehicle in user_vehicles %}
+                <div class="vehicle-card">
+                    <div class="vehicle-header">
+                        <h3 class="vehicle-name">{{ vehicle.vehicle_make }} {{ vehicle.vehicle_model }}</h3>
+                        <span class="vehicle-type-badge">{{ vehicle.vehicle_type }}</span>
+                    </div>
+                    <ul class="vehicle-details">
+                        <li><strong>🆔 License Plate:</strong> {{ vehicle.license_plate }}</li>
+                        <li><strong>👤 Owner Name:</strong> {{ vehicle.owner_name }}</li>
+                        <li><strong>📞 Phone Number:</strong> {{ vehicle.owner_number }}</li>
+                        <li><strong>🏠 Address:</strong> {{ vehicle.registered_address }}</li>
+                        <li><strong>📮 Zip Code:</strong> {{ vehicle.zip_code }}</li>
+                    </ul>
+                    
+                    <!-- Vehicle Actions -->
+                    <div class="vehicle-actions">
+                        <a href="/edit_car/{{ vehicle.id }}" class="action-btn btn-edit">✏️ Edit</a>
+                        <form method="POST" action="/delete_car/{{ vehicle.id }}" style="display: inline;" 
+                              onsubmit="return confirm('Are you sure you want to delete this vehicle?')">
+                            <button type="submit" class="action-btn btn-delete">🗑️ Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-items">
+                    <p>🚫 No vehicles registered yet.</p>
+                    <a href="/car">Register your first vehicle</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Tickets Section -->
+        <div class="section">
+            <h2 class="section-title">🎫 Your Support Tickets</h2>
+            
+            {% if user_tickets %}
+                <div class="item-count">
+                    📋 {{ user_tickets|length }} ticket(s) submitted
+                </div>
+                
+                {% for ticket in user_tickets %}
+                <div class="ticket-card">
+                    <div class="ticket-header">
+                        <h3 class="ticket-title">Ticket #{{ ticket.id }}</h3>
+                        <span class="status-badge {% if ticket.status == 'Pending' %}status-pending{% else %}status-completed{% endif %}">
+                            {{ ticket.status }}
+                        </span>
+                    </div>
+                    <ul class="ticket-details">
+                        <li><strong>🚗 Vehicle:</strong> {{ ticket.vehicle }}</li>
+                        <li><strong>🔧 Issue:</strong> {{ ticket.issue }}</li>
+                        <li><strong>📍 Location:</strong> {{ ticket.location }}</li>
+                        <li><strong>📅 Status:</strong> {{ ticket.status }}</li>
+                    </ul>
+                    
+                    <div class="ticket-actions">
+                        {% if ticket.status == 'Pending' %}
+                            <form method="POST" action="/complete_ticket/{{ ticket.id }}" style="display: inline;">
+                                <button type="submit" class="action-btn btn-complete">✅ Mark as Completed</button>
+                            </form>
+                        {% endif %}
+                        
+                        <a href="/edit_ticket/{{ ticket.id }}" class="action-btn btn-edit">✏️ Edit</a>
+                        
+                        <form method="POST" action="/delete_ticket/{{ ticket.id }}" style="display: inline;" 
+                              onsubmit="return confirm('Are you sure you want to delete this ticket?')">
+                            <button type="submit" class="action-btn btn-delete">🗑️ Delete</button>
+                        </form>
+                    </div>
+                </div>
+                <!-- In your dashboard.html ticket actions section -->
+<div class="ticket-actions">
+    {% if ticket.status == 'Pending' %}
+        <form method="POST" action="/complete_ticket/{{ ticket.id }}" style="display: inline;">
+            <button type="submit" class="action-btn btn-complete">✅ Mark as Completed</button>
+        </form>
+    {% endif %}
+    
+    <!-- Add this new button -->
+    {% if ticket.latitude and ticket.longitude %}
+        <a href="/nearby_mechanics/{{ ticket.id }}" class="action-btn btn-info" style="background: #17a2b8;">
+            🔧 Find Mechanics
+        </a>
+    {% endif %}
+    
+    <a href="/edit_ticket/{{ ticket.id }}" class="action-btn btn-edit">✏️ Edit</a>
+    
+    <form method="POST" action="/delete_ticket/{{ ticket.id }}" style="display: inline;" 
+          onsubmit="return confirm('Are you sure you want to delete this ticket?')">
+        <button type="submit" class="action-btn btn-delete">🗑️ Delete</button>
+    </form>
+</div>
+                {% endfor %}
+            {% else %}
+                <div class="no-items">
+                    <p>📝 No tickets submitted yet.</p>
+                    <a href="/ticket">Submit your first ticket</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
