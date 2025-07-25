@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect
+from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 from modes import GoogleMapsService
 import os
 load_dotenv()
+import pdfkit
+from flask import Response
+from datetime import datetime
 
 
 # Initialize Flask app
@@ -381,6 +384,79 @@ def nearby_mechanics(ticket_id):
                          mechanics=mechanics_result.get('mechanics', []),
                          api_key=app.config['GOOGLE_MAPS_API_KEY'])
 
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.colors import HexColor
+import io
+
+@app.route("/generate-simple-pdf/<int:ticket_id>", methods=['GET'])
+@login_required  
+def generate_pdf(ticket_id):
+    try:
+        ticket = Ticket.query.get_or_404(ticket_id)
+        
+        if ticket.user_id != current_user.id:
+            return redirect(url_for('dashboard'))
+        
+        user = User.query.get(ticket.user_id)
+        vehicle = Vehicle.query.get(ticket.user_id)
+        
+        # Create PDF in memory
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        
+        # Title
+        p.setFillColor(HexColor('#4c63d2'))
+        p.setFont("Helvetica-Bold", 24)
+        p.drawString(50, height - 100, f"Support Ticket #{ticket.id}")
+        
+        # Content
+        p.setFillColor(HexColor('#333333'))
+        p.setFont("Helvetica", 12)
+        y_position = height - 150
+        
+        content = [
+           
+            f"Status: {ticket.status or 'Pending'}",
+            f"Customer: {user.username}",
+            f"Customer Phone Number: {vehicle.owner_number}",
+            f"Location: {ticket.location or 'N/A'}",
+            f"Vehicle: {ticket.vehicle or 'N/A'}",
+            "",
+            "Issue Description:",
+            ticket.issue or 'No description provided.',
+            "",
+            f"Generated on: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}"
+        ]
+        
+        for line in content:
+            p.drawString(50, y_position, line)
+            y_position -= 20
+        
+        p.showPage()
+        p.save()
+        
+        # Get PDF data
+        buffer.seek(0)
+        pdf_data = buffer.read()
+        buffer.close()
+        
+        # Create response
+        filename = f"ticket_{ticket.id}_{user.username}.pdf"
+        headers = {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': f'attachment;filename={filename}'
+        }
+        
+        return Response(pdf_data, headers=headers)
+        
+    except Exception as e:
+        flash(f"PDF generation failed: {str(e)}", "error")
+        return redirect(url_for('dashboard'))
+    
+    
 @app.route("/logout")
 @login_required
 def logout():
