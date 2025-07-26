@@ -9,7 +9,12 @@ import os
 load_dotenv()
 import pdfkit
 from flask import Response
+import base64
 from datetime import datetime
+import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail,Attachment, FileContent, FileName, FileType
+
 
 
 # Initialize Flask app
@@ -28,7 +33,7 @@ login_manager.init_app(app)
 login_manager.login_view = "login"
 
 
-
+sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
 
 
 class User(UserMixin, db.Model):
@@ -456,6 +461,117 @@ def generate_pdf(ticket_id):
         flash(f"PDF generation failed: {str(e)}", "error")
         return redirect(url_for('dashboard'))
     
+@app.route('/email-me/<int:ticket_id>', methods=['GET','POST'])
+@login_required
+def email_me_pdf(ticket_id):
+    ticket = Ticket.query.get_or_404(ticket_id)
+    
+    if ticket.user_id != current_user.id:
+        flash("Access denied: You don't own this ticket.", "error")
+        return redirect(url_for('dashboard'))
+    
+    user = User.query.get(ticket.user_id)
+    vehicle = Vehicle.query.filter_by(user_id=ticket.user_id).first()
+    
+    if request.method == "GET":
+        return render_template('email_me.html', ticket=ticket, user=user)
+    
+    if request.method == "POST":
+        email = request.form.get('email')
+        
+        if not email:
+            flash("Email address is required.", "error")
+            return render_template('email_me.html', ticket=ticket, user=user)
+        
+        try:
+            # Generate PDF using ReportLab (your existing code)
+            buffer = io.BytesIO()
+            p = canvas.Canvas(buffer, pagesize=letter)
+            width, height = letter
+            
+            # Title
+            p.setFillColor(HexColor('#4c63d2'))
+            p.setFont("Helvetica-Bold", 24)
+            p.drawString(50, height - 100, f"Support Ticket #{ticket.id}")
+            
+            # Content
+            p.setFillColor(HexColor('#333333'))
+            p.setFont("Helvetica", 12)
+            y_position = height - 150
+            
+            content = [
+                f"Status: {ticket.status or 'Pending'}",
+                f"Customer: {user.username}",
+                f"Customer Phone Number: {vehicle.owner_number if vehicle else 'N/A'}",
+                f"Location: {ticket.location or 'N/A'}",
+                f"Vehicle: {ticket.vehicle or 'N/A'}",
+                "",
+                "Issue Description:",
+                ticket.issue or 'No description provided.',
+                "",
+                f"Generated on: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}"
+            ]
+            
+            for line in content:
+                p.drawString(50, y_position, line)
+                y_position -= 20
+            
+            p.showPage()
+            p.save()
+            
+            # Get PDF data
+            buffer.seek(0)
+            pdf_data = buffer.read()
+            buffer.close()
+            
+            # Email setup
+            vehicle_details = ticket.vehicle or "N/A"
+            if vehicle:
+                vehicle_details = f"{vehicle.license_plate} - {vehicle.vehicle_make} {vehicle.vehicle_model} ({vehicle.vehicle_type})"
+            
+            message = Mail(
+                from_email='faresdolsika@gmail.com',
+                to_emails=email,
+                subject=f'Support Ticket #{ticket.id} - {user.username}',
+                html_content=f'''
+                <h2>Support Ticket PDF</h2>
+                <p>Hello,</p>
+                <p>Please find attached the PDF for support ticket #{ticket.id}.</p>
+                <p><strong>Ticket Details:</strong></p>
+                <ul>
+                    
+                    <li>Customer: {user.username}</li>
+                    <li>Status: {ticket.status or 'Pending'}</li>
+                    <li>Location: {ticket.location or 'N/A'}</li>
+                    <li>Vehicle: {vehicle_details}</li>
+                </ul>
+                <p>Best regards,<br>Support Team</p>
+                '''
+            )
+            
+            # Add PDF attachment
+            encoded_pdf = base64.b64encode(pdf_data).decode()
+            attachment = Attachment(
+                FileContent(encoded_pdf),
+                FileName(f'ticket_{ticket.id}_{user.username}.pdf'),
+                FileType('application/pdf')
+            )
+            message.attachment = attachment
+            
+            # Send email
+            response = sg.send(message)
+            
+            if response.status_code == 202:
+                flash(f"PDF successfully sent to {email}!", "success")
+            else:
+                flash("Email sending failed. Please try again.", "error")
+                
+        except Exception as e:
+            flash(f"Error sending email: {str(e)}", "error")
+            print(f"Email error: {str(e)}")
+            return render_template('email_me.html', ticket=ticket, user=user)
+        
+        return redirect(url_for('dashboard'))
     
 @app.route("/logout")
 @login_required
